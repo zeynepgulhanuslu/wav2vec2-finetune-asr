@@ -1,0 +1,8 @@
+logs/
+src/python/core/__pycache__/
+src/python/__pycache__/
+.vscode/
+dist/*
+build/*
+.idea
+
