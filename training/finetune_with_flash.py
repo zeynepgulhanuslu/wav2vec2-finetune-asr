@@ -20,8 +20,8 @@ if __name__ == '__main__':
     model_file = args.model_file
 
     datamodule = SpeechRecognitionData.from_json(
-        input_field="file",
-        target_field="text",
+        input_field="path",
+        target_field="sentence",
         train_file=train_json_file,
         test_file=test_json_file,
         batch_size=4)

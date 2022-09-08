@@ -1,3 +1,4 @@
+import argparse
 import csv
 import os
 
@@ -53,10 +54,10 @@ def save_kaldi_data_as_csv(kaldi_dir, out_file):
         os.mkdir(parent_dir)
     f_o = open(out_file, 'w', encoding='utf-8', newline='')
     writer = csv.writer(f_o)
-    header = ['path', 'transcript']
+    header = ['path', 'audio', 'sentence']
     writer.writerow(header)
     for unit in kaldi_units:
-        writer.writerow([unit.audio_path, unit.text])
+        writer.writerow([unit.audio_path, unit.audio_path, unit.text])
 
 
 def save_kaldi_data_as_json(kaldi_dir, out_file):
@@ -77,16 +78,22 @@ def get_dataset(csv_file):
 
 
 if __name__ == '__main__':
-    kaldi_dir = 'D:/zeynep/data/asr/commonvoice/k2-data/'
-    test_json_file = os.path.join(kaldi_dir, 'test/test.json')
-    train_json_file = os.path.join(kaldi_dir, 'train/train.json')
-    save_kaldi_data_as_json(kaldi_dir, train_json_file)
-    '''
-    save_kaldi_data_as_csv(kaldi_dir, out_file)
-    
-    train_df = pd.read_csv(out_file)
-    print(train_df.head())
-    train_data = Dataset.from_pandas(train_df)
-    print(train_data)
-    print(train_data.features)
-    '''
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--kaldi_dir', type=str, required=True, help='kaldi directory')
+    parser.add_argument('--out_file', type=str, required=True, help='data file')
+    parser.add_argument('--csv', type=bool, required=False, help='True if csv file created')
+    parser.add_argument('--json', type=bool, required=False, help='True if json file created')
+
+    args = parser.parse_args()
+    kaldi_dir = args.kaldi_dir
+    out_file = args.out_file
+    csv = args.csv
+    json = args.json
+
+    if csv:
+        save_kaldi_data_as_csv(kaldi_dir, out_file)
+    elif json:
+        save_kaldi_data_as_json(kaldi_dir, out_file)
+    else:
+        print('no data saved')
