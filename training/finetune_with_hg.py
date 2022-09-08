@@ -144,7 +144,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--train', type=str, required=True, help='train csv data file')
     parser.add_argument('--test', type=str, required=True, help='test csv data file')
-    parser.add_argument('--epochs', type=int, required=True, help='epoch count')
     parser.add_argument('--vocab', type=str, required=True, help='vocab json file')
     parser.add_argument('--num_proc', type=int, required=True, help='num process counts')
     parser.add_argument('--out_dir', type=str, required=True, help='output directory')
