@@ -164,21 +164,21 @@ if __name__ == '__main__':
     # read audio file
     train_dataset = train_dataset.cast_column("audio", Audio(sampling_rate=16_000))
     test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000))
-
+    print('reading data complete')
     save_vocab(train_dataset, test_dataset, vocab_file)
-
+    print('vocab file saved')
     tokenizer = Wav2Vec2CTCTokenizer(vocab_file, unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
 
     feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
                                                  do_normalize=True, return_attention_mask=True)
 
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
-
+    print('preparing dataset as batches')
     train_dataset = train_dataset.map(prepare_dataset, remove_columns=train_dataset.column_names,
                                       num_proc=num_process)
     test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
                                     num_proc=num_process)
-
+    print('batch dataset completed.')
     wer_metric = load_metric("wer")
 
     model = Wav2Vec2ForCTC.from_pretrained(
@@ -192,6 +192,7 @@ if __name__ == '__main__':
         pad_token_id=tokenizer.pad_token_id,
         vocab_size=len(tokenizer)
     )
+    print('initialize multilangual model')
     model.freeze_feature_extractor()
     model.gradient_checkpointing_enable()
 
@@ -211,6 +212,7 @@ if __name__ == '__main__':
         save_total_limit=2,
     )
 
+
     trainer = Trainer(
         model=model,
         data_collator=data_collator,
@@ -220,5 +222,6 @@ if __name__ == '__main__':
         eval_dataset=test_dataset,
         tokenizer=tokenizer,
     )
-
+    print('training started')
     trainer.train()
+    print('training finished')
