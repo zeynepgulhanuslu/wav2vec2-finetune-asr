@@ -1,13 +1,11 @@
 import argparse
 import csv
+import json
 import os
 
-import flash
 import pandas as pd
-from flash.audio import SpeechRecognitionData, SpeechRecognition
-from unicode_tr import unicode_tr
 from datasets import Dataset
-import json
+from unicode_tr import unicode_tr
 
 '''
 This code converts kaldi directory to wav2vec2 training csv format.
@@ -60,18 +58,6 @@ def save_kaldi_data_as_csv(kaldi_dir, out_file):
         writer.writerow([unit.audio_path, unit.audio_path, unit.text])
 
 
-def save_kaldi_data_as_json(kaldi_dir, out_file):
-    kaldi_units = KaldiDataUnit.load_kaldi_data(kaldi_dir)
-    parent_dir = os.path.dirname(out_file)
-    if not os.path.exists(parent_dir):
-        os.mkdir(parent_dir)
-    f_o = open(out_file, 'w', encoding='utf-8')
-
-    for unit in kaldi_units:
-        json_string = {'file': unit.audio_path, 'text': unit.text}
-        json.dump(json_string, f_o)
-
-
 def get_dataset(csv_file):
     train_df = pd.read_csv(csv_file)
     return Dataset.from_pandas(train_df)
@@ -82,18 +68,12 @@ if __name__ == '__main__':
 
     parser.add_argument('--kaldi_dir', type=str, required=True, help='kaldi directory')
     parser.add_argument('--out_file', type=str, required=True, help='data file')
-    parser.add_argument('--csv', type=bool, required=False, help='True if csv file created')
-    parser.add_argument('--json', type=bool, required=False, help='True if json file created')
+
 
     args = parser.parse_args()
     kaldi_dir = args.kaldi_dir
     out_file = args.out_file
-    csv = args.csv
-    json = args.json
 
-    if csv:
-        save_kaldi_data_as_csv(kaldi_dir, out_file)
-    elif json:
-        save_kaldi_data_as_json(kaldi_dir, out_file)
-    else:
-        print('no data saved')
+
+
+    save_kaldi_data_as_csv(kaldi_dir, out_file)
