@@ -1,4 +1,5 @@
 import os
+
 os.environ['TRANSFORMERS_CACHE'] = '/ORTAK/zeynep/cache'
 os.environ['PYTORCH_TRANSFORMERS_CACHE'] = '/ORTAK/zeynep/cache'
 os.environ['HF_DATASETS_CACHE'] = '/ORTAK/zeynep/cache'
@@ -56,10 +57,12 @@ def save_vocab(train_dataset, test_dataset, vocab_file):
 
 
 def prepare_dataset(batch):
+    tmp_dir = '/ORTAK/zeynep/cache'
     audio = batch["audio"]
 
     # batched output is "un-batched"
-    batch["input_values"] = processor(audio["array"], sampling_rate=audio["sampling_rate"]).input_values[0]
+    batch["input_values"] = \
+    processor(audio["array"], sampling_rate=audio["sampling_rate"], use_temp_dir=tmp_dir).input_values[0]
 
     with processor.as_target_processor():
         batch["labels"] = processor(batch["sentence"]).input_ids
@@ -153,7 +156,6 @@ if __name__ == '__main__':
     parser.add_argument('--num_proc', type=int, required=True, help='num process counts')
     parser.add_argument('--out_dir', type=str, required=True, help='output directory')
 
-
     args = parser.parse_args()
     train_file = args.train
     test_file = args.test
@@ -162,6 +164,7 @@ if __name__ == '__main__':
     test_dataset = get_dataset(test_file)
     num_process = args.num_proc
     out_dir = args.out_dir
+    tmp_dir = args.tmp_dir
 
     train_dataset = train_dataset.map(remove_special_characters)
     test_dataset = test_dataset.map(remove_special_characters)
@@ -216,7 +219,6 @@ if __name__ == '__main__':
         warmup_steps=500,
         save_total_limit=2,
     )
-
 
     trainer = Trainer(
         model=model,
