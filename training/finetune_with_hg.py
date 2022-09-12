@@ -1,3 +1,8 @@
+import os
+os.environ['TRANSFORMERS_CACHE'] = '/ORTAK/zeynep/cache'
+os.environ['PYTORCH_TRANSFORMERS_CACHE'] = '/ORTAK/zeynep/cache'
+os.environ['HF_DATASETS_CACHE'] = '/ORTAK/zeynep/cache'
+
 import argparse
 import re
 import json
