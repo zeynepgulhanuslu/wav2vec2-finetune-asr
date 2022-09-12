@@ -164,7 +164,6 @@ if __name__ == '__main__':
     test_dataset = get_dataset(test_file)
     num_process = args.num_proc
     out_dir = args.out_dir
-    tmp_dir = args.tmp_dir
 
     train_dataset = train_dataset.map(remove_special_characters)
     test_dataset = test_dataset.map(remove_special_characters)
