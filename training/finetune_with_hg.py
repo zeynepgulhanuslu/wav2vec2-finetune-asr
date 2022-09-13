@@ -61,8 +61,8 @@ def prepare_dataset(batch):
     audio = batch["audio"]
 
     # batched output is "un-batched"
-    batch["input_values"] = \
-    processor(audio["array"], sampling_rate=audio["sampling_rate"], use_temp_dir=tmp_dir).input_values[0]
+    batch["input_values"] = processor(audio["array"], sampling_rate=audio["sampling_rate"],
+                                      use_temp_dir=tmp_dir).input_values[0]
 
     with processor.as_target_processor():
         batch["labels"] = processor(batch["sentence"]).input_ids
@@ -167,10 +167,10 @@ if __name__ == '__main__':
 
     train_dataset = train_dataset.map(remove_special_characters)
     test_dataset = test_dataset.map(remove_special_characters)
-
+    cache_dir = '/ORTAK/zeynep/cache'
     # read audio file
-    train_dataset = train_dataset.cast_column("audio", Audio(sampling_rate=16_000))
-    test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000))
+    train_dataset = train_dataset.cast_column("audio", Audio(sampling_rate=16_000), cache_dir=cache_dir)
+    test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000), cache_dir=cache_dir)
     print('reading data complete')
     save_vocab(train_dataset, test_dataset, vocab_file)
     print('vocab file saved')
@@ -217,6 +217,7 @@ if __name__ == '__main__':
         learning_rate=3e-4,
         warmup_steps=500,
         save_total_limit=2,
+        push_to_hub=False,
     )
 
     trainer = Trainer(
