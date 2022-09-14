@@ -5,3 +5,4 @@ librosa
 jiwer
 unicode_tr
 lightning-flash
+evaluate

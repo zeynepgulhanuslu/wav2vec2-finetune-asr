@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
+import evaluate
 import numpy as np
 import torch
 from datasets import Audio, load_metric
@@ -175,7 +176,7 @@ if __name__ == '__main__':
     test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
                                     num_proc=num_process, keep_in_memory=True)
     print('batch dataset completed.')
-    wer_metric = load_metric("wer")
+    wer_metric = evaluate.load("wer")
 
     model = Wav2Vec2ForCTC.from_pretrained(
         "facebook/wav2vec2-large-xlsr-53",
