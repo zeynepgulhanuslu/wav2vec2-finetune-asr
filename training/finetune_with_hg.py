@@ -52,10 +52,8 @@ def save_vocab(train_dataset, test_dataset, vocab_file):
 
 def prepare_dataset(batch):
     audio = batch["audio"]
-    print('audio type: ', type(audio))
     # batched output is "un-batched"
     batch["input_values"] = processor(audio["array"], sampling_rate=audio["sampling_rate"]).input_values[0]
-    print('batch type: ', type(batch["input_values"]))
     with processor.as_target_processor():
         batch["labels"] = processor(batch["sentence"]).input_ids
     return batch
