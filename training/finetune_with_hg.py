@@ -52,10 +52,10 @@ def save_vocab(train_dataset, test_dataset, vocab_file):
 
 def prepare_dataset(batch):
     audio = batch["audio"]
-
+    print('audio type: ', type(audio))
     # batched output is "un-batched"
     batch["input_values"] = processor(audio["array"], sampling_rate=audio["sampling_rate"]).input_values[0]
-
+    print('batch type: ', type(batch["input_values"]))
     with processor.as_target_processor():
         batch["labels"] = processor(batch["sentence"]).input_ids
     return batch
@@ -173,9 +173,9 @@ if __name__ == '__main__':
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
     print('preparing dataset as batches')
     train_dataset = train_dataset.map(prepare_dataset, remove_columns=train_dataset.column_names,
-                                      num_proc=num_process)
+                                      num_proc=num_process, keep_in_memory=True)
     test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
-                                    num_proc=num_process)
+                                    num_proc=num_process, keep_in_memory=True)
     print('batch dataset completed.')
     wer_metric = load_metric("wer")
 
