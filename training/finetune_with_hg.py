@@ -7,14 +7,9 @@ from typing import Dict, List, Optional, Union
 import evaluate
 import numpy as np
 import torch
-from datasets import Audio, load_metric
-from transformers import Trainer
-from transformers import TrainingArguments
-from transformers import Wav2Vec2CTCTokenizer
-from transformers import Wav2Vec2FeatureExtractor
-from transformers import Wav2Vec2ForCTC
-from transformers import Wav2Vec2Processor
-from transformers.data import data_collator
+from datasets import Audio
+from transformers import Wav2Vec2Processor, Wav2Vec2CTCTokenizer, Wav2Vec2ForCTC, TrainingArguments, Trainer, \
+    Wav2Vec2FeatureExtractor
 
 from dataloader.convert_kaldi_data import get_dataset
 
@@ -40,7 +35,7 @@ def save_vocab(train_dataset, test_dataset, vocab_file):
 
     vocab_list = list(set(vocab_train["vocab"][0]) | set(vocab_test["vocab"][0]))
 
-    vocab_dict = {v: k for k, v in enumerate(vocab_list)}
+    vocab_dict = {v: k for k, v in enumerate(sorted(vocab_list))}
     vocab_dict["|"] = vocab_dict[" "]
     del vocab_dict[" "]
     vocab_dict["[UNK]"] = len(vocab_dict)
@@ -50,7 +45,13 @@ def save_vocab(train_dataset, test_dataset, vocab_file):
     with open(vocab_file, 'w', encoding='utf-8') as vocab_file:
         json.dump(vocab_dict, vocab_file)
 
-
+def replace_hatted_characters(batch):
+    batch["sentence"] = re.sub('[â]', 'a', batch["sentence"])
+    batch["sentence"] = re.sub('[î]', 'i', batch["sentence"])
+    batch["sentence"] = re.sub('[ô]', 'o', batch["sentence"])
+    batch["sentence"] = re.sub('[û]', 'u', batch["sentence"])
+    batch["sentence"] = re.sub('[é]', 'e', batch["sentence"])
+    return batch
 def prepare_dataset(batch):
     audio = batch["audio"]
     # batched output is "un-batched"
@@ -127,7 +128,7 @@ def compute_metrics(pred):
     pred_logits = pred.predictions
     pred_ids = np.argmax(pred_logits, axis=-1)
 
-    pred.label_ids[pred.label_ids == -100] = processor.tokenizer.pad_token_id
+    pred.label_ids[pred.label_ids == -100] = tokenizer.pad_token_id
 
     pred_str = processor.batch_decode(pred_ids)
     # we do not want to group tokens when computing the metrics
@@ -156,14 +157,19 @@ if __name__ == '__main__':
     num_process = args.num_proc
     out_dir = args.out_dir
 
+    train_dataset = train_dataset.map(replace_hatted_characters)
+    test_dataset = test_dataset.map(replace_hatted_characters)
+
     train_dataset = train_dataset.map(remove_special_characters)
     test_dataset = test_dataset.map(remove_special_characters)
+
     # read audio file
     train_dataset = train_dataset.cast_column("audio", Audio(sampling_rate=16_000))
     test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000))
     print('reading data complete')
     save_vocab(train_dataset, test_dataset, vocab_file)
     print('vocab file saved')
+
     tokenizer = Wav2Vec2CTCTokenizer(vocab_file, unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
 
     feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
@@ -177,22 +183,23 @@ if __name__ == '__main__':
                                     num_proc=num_process, keep_in_memory=True)
     print('batch dataset completed.')
     wer_metric = evaluate.load("wer")
+    data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)
 
+    print('initialize multilangual model')
     model = Wav2Vec2ForCTC.from_pretrained(
-        "facebook/wav2vec2-large-xlsr-53",
-        attention_dropout=0.1,
-        hidden_dropout=0.1,
+        "facebook/wav2vec2-xls-r-300m",
+        attention_dropout=0.0,
+        hidden_dropout=0.0,
         feat_proj_dropout=0.0,
         mask_time_prob=0.05,
-        layerdrop=0.1,
+        layerdrop=0.0,
         ctc_loss_reduction="mean",
         pad_token_id=tokenizer.pad_token_id,
-        vocab_size=len(tokenizer)
+        vocab_size=len(tokenizer),
     )
-    print('initialize multilangual model')
-    model.freeze_feature_extractor()
-    model.gradient_checkpointing_enable()
 
+
+    model.gradient_checkpointing_enable()
     training_args = TrainingArguments(
         output_dir=out_dir,
         group_by_length=True,
@@ -200,15 +207,17 @@ if __name__ == '__main__':
         gradient_accumulation_steps=2,
         evaluation_strategy="steps",
         num_train_epochs=30,
+        gradient_checkpointing=True,
         fp16=True,
-        save_steps=100,
-        eval_steps=100,
-        logging_steps=10,
+        save_steps=400,
+        eval_steps=400,
+        logging_steps=400,
         learning_rate=3e-4,
         warmup_steps=500,
         save_total_limit=2,
         push_to_hub=False,
     )
+
 
     trainer = Trainer(
         model=model,
@@ -222,3 +231,5 @@ if __name__ == '__main__':
     print('training started')
     trainer.train()
     print('training finished')
+
+
