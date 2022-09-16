@@ -180,7 +180,6 @@ if __name__ == '__main__':
     print('preparing dataset as batches')
     test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
                                     num_proc=num_process, keep_in_memory=True)
-    print(test_dataset[0]["input_values"], type(test_dataset[0]["input_values"]))
 
     train_dataset = train_dataset.map(prepare_dataset, remove_columns=train_dataset.column_names,
                                       num_proc=num_process, keep_in_memory=True)
