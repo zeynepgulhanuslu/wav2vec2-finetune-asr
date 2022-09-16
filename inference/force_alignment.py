@@ -30,14 +30,14 @@ if __name__ == '__main__':
     model = model.to('cpu')
     print(model)
     test_dataset = get_dataset(test_file)
-
+    sentence = test_dataset[0]["sentence"].lower()
     test_dataset = test_dataset.map(remove_special_characters)
     test_dataset = test_dataset.map(replace_hatted_characters)
     test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000))
     test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
                                     num_proc=4, keep_in_memory=True)
 
-    input_dict = processor(test_dataset[0]["input_values"], return_tensors="pt", padding=True)
+    input_dict = processor(test_dataset[0]["input_values"], sampling_rate=16_000, return_tensors="pt", padding=True)
 
     logits = model(input_dict.input_values.to("cpu")).logits
 
@@ -47,4 +47,4 @@ if __name__ == '__main__':
     print(processor.decode(pred_ids))
 
     print("\nReference:")
-    print(test_dataset[0]["sentence"].lower())
+    print(sentence)
