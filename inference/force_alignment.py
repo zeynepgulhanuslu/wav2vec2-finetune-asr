@@ -11,7 +11,7 @@ if __name__ == '__main__':
     model = AutoModelForCTC.from_pretrained(model_path)
 
     model = model.to('cpu')
-    print(model.summary())
+    print(model)
     common_voice_test = load_dataset("common_voice", "tr", split="test")
     common_voice_test = common_voice_test.remove_columns(
         ["accent", "age", "client_id", "down_votes", "gender", "locale", "segment", "up_votes"])

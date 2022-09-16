@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
-#import evaluate
+import evaluate
 import numpy as np
 import torch
 from datasets import Audio
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
                                     num_proc=num_process, keep_in_memory=True)
     print(test_dataset[0]["input_values"], type(test_dataset[0]["input_values"]))
-    '''
+
     train_dataset = train_dataset.map(prepare_dataset, remove_columns=train_dataset.column_names,
                                       num_proc=num_process, keep_in_memory=True)
 
@@ -240,5 +240,3 @@ if __name__ == '__main__':
     print('training started')
     trainer.train()
     print('training finished')
-
-'''
