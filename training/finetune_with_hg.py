@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
-import evaluate
+#import evaluate
 import numpy as np
 import torch
 from datasets import Audio
@@ -50,6 +50,7 @@ def replace_hatted_characters(batch):
     batch["sentence"] = re.sub('[î]', 'i', batch["sentence"])
     batch["sentence"] = re.sub('[ô]', 'o', batch["sentence"])
     batch["sentence"] = re.sub('[û]', 'u', batch["sentence"])
+    batch["sentence"] = re.sub('[é]', 'e', batch["sentence"])
     batch["sentence"] = re.sub('[é]', 'e', batch["sentence"])
     return batch
 def prepare_dataset(batch):
@@ -177,15 +178,23 @@ if __name__ == '__main__':
 
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
     print('preparing dataset as batches')
+    test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
+                                    num_proc=num_process, keep_in_memory=True)
+    print(test_dataset[0]["input_values"], type(test_dataset[0]["input_values"]))
+    '''
     train_dataset = train_dataset.map(prepare_dataset, remove_columns=train_dataset.column_names,
                                       num_proc=num_process, keep_in_memory=True)
+
     test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
                                     num_proc=num_process, keep_in_memory=True)
     print('batch dataset completed.')
+
+
+
     wer_metric = evaluate.load("wer")
     data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)
 
-    print('initialize multilangual model')
+    print('initialize multi-languages model')
     model = Wav2Vec2ForCTC.from_pretrained(
         "facebook/wav2vec2-xls-r-300m",
         attention_dropout=0.0,
@@ -232,4 +241,4 @@ if __name__ == '__main__':
     trainer.train()
     print('training finished')
 
-
+'''
