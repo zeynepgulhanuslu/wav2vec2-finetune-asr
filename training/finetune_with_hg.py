@@ -163,6 +163,7 @@ if __name__ == '__main__':
     train_data_dir = os.path.join(out_dir, 'train-data')
 
     if os.path.exists(test_data_dir):
+        print('loading test data from disk')
         test_dataset = load_from_disk(test_data_dir)
     else:
         test_dataset = get_dataset(test_file)
@@ -171,6 +172,7 @@ if __name__ == '__main__':
         test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000))
 
     if os.path.exists(train_data_dir):
+        print('loading train data from disk')
         train_dataset = load_from_disk(train_data_dir)
     else:
 
