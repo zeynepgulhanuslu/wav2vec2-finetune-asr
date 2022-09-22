@@ -5,10 +5,10 @@ import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
-import evaluate
+#import evaluate
 import numpy as np
 import torch
-from datasets import Audio, load_from_disk
+from datasets import Audio, load_from_disk, load_metric
 from transformers import Wav2Vec2Processor, Wav2Vec2CTCTokenizer, Wav2Vec2ForCTC, TrainingArguments, Trainer, \
     Wav2Vec2FeatureExtractor
 
@@ -154,20 +154,35 @@ if __name__ == '__main__':
     train_file = args.train
     test_file = args.test
     vocab_file = args.vocab
-    train_dataset = get_dataset(train_file)
-    test_dataset = get_dataset(test_file)
+
     num_process = args.num_proc
     out_dir = args.out_dir
 
-    train_dataset = train_dataset.map(replace_hatted_characters)
-    test_dataset = test_dataset.map(replace_hatted_characters)
 
-    train_dataset = train_dataset.map(remove_special_characters)
-    test_dataset = test_dataset.map(remove_special_characters)
+    test_data_dir = os.path.join(out_dir, 'test-data')
+    train_data_dir = os.path.join(out_dir, 'train-data')
 
-    # read audio file
-    train_dataset = train_dataset.cast_column("audio", Audio(sampling_rate=16_000))
-    test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000))
+    if os.path.exists(test_data_dir):
+        test_dataset = load_from_disk(test_data_dir)
+    else:
+        test_dataset = get_dataset(test_file)
+        test_dataset = test_dataset.map(replace_hatted_characters)
+        test_dataset = test_dataset.map(remove_special_characters)
+        test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000))
+
+    if os.path.exists(train_data_dir):
+        train_dataset = load_from_disk(train_data_dir)
+    else:
+
+        train_dataset = get_dataset(train_file)
+        train_dataset = train_dataset.map(replace_hatted_characters)
+        train_dataset = train_dataset.map(remove_special_characters)
+        # read audio file
+        train_dataset = train_dataset.cast_column("audio", Audio(sampling_rate=16_000))
+
+
+
+
     print('reading data complete')
     save_vocab(train_dataset, test_dataset, vocab_file)
     print('vocab file saved')
@@ -178,19 +193,27 @@ if __name__ == '__main__':
                                                  do_normalize=True, return_attention_mask=True)
 
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
-    print('preparing dataset as batches')
-    test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
-                                    num_proc=num_process, keep_in_memory=True)
-    print(type(test_dataset))
-    test_dataset.save_to_disk(os.path.join(out_dir, 'test-data'))
-    train_dataset = train_dataset.map(prepare_dataset, remove_columns=train_dataset.column_names,
-                                      num_proc=num_process, keep_in_memory=True)
-
-    train_dataset.save_to_disk(os.path.join(out_dir, 'train-data'))
-    print('batch dataset completed.')
 
 
-    wer_metric = evaluate.load("wer")
+    if not os.path.exists(test_data_dir):
+        print('preparing dataset as batches')
+        test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
+                                        num_proc=num_process, keep_in_memory=True)
+
+        test_dataset.save_to_disk(test_data_dir)
+
+    if not os.path.exists(train_data_dir):
+
+        train_dataset = train_dataset.map(prepare_dataset, remove_columns=train_dataset.column_names,
+                                          num_proc=num_process, keep_in_memory=True)
+
+
+        train_dataset.save_to_disk(train_data_dir)
+        print('batch dataset completed.')
+
+
+   # wer_metric = evaluate.load("wer")
+    wer_metric = load_metric("wer")
     data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)
 
     print('initialize multi-languages model')
@@ -233,8 +256,8 @@ if __name__ == '__main__':
         data_collator=data_collator,
         args=training_args,
         compute_metrics=compute_metrics,
-        train_dataset=load_from_disk(os.path.join(out_dir, 'train-data')),
-        eval_dataset=load_from_disk(os.path.join(out_dir, 'test-data')),
+        train_dataset=train_dataset,
+        eval_dataset=test_dataset,
         tokenizer=tokenizer,
     )
     print('training started')
