@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
@@ -7,7 +8,7 @@ from typing import Dict, List, Optional, Union
 import evaluate
 import numpy as np
 import torch
-from datasets import Audio
+from datasets import Audio, load_from_disk
 from transformers import Wav2Vec2Processor, Wav2Vec2CTCTokenizer, Wav2Vec2ForCTC, TrainingArguments, Trainer, \
     Wav2Vec2FeatureExtractor
 
@@ -180,14 +181,13 @@ if __name__ == '__main__':
     print('preparing dataset as batches')
     test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
                                     num_proc=num_process, keep_in_memory=True)
-
+    print(type(test_dataset))
+    test_dataset.save_to_disk(os.path.join(out_dir, 'test-data'))
     train_dataset = train_dataset.map(prepare_dataset, remove_columns=train_dataset.column_names,
                                       num_proc=num_process, keep_in_memory=True)
 
-    test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
-                                    num_proc=num_process, keep_in_memory=True)
+    train_dataset.save_to_disk(os.path.join(out_dir, 'train-data'))
     print('batch dataset completed.')
-
 
 
     wer_metric = evaluate.load("wer")
@@ -213,7 +213,8 @@ if __name__ == '__main__':
         group_by_length=True,
         per_device_train_batch_size=16,
         gradient_accumulation_steps=2,
-        evaluation_strategy="steps",
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
         num_train_epochs=30,
         gradient_checkpointing=True,
         fp16=True,
@@ -232,8 +233,8 @@ if __name__ == '__main__':
         data_collator=data_collator,
         args=training_args,
         compute_metrics=compute_metrics,
-        train_dataset=train_dataset,
-        eval_dataset=test_dataset,
+        train_dataset=load_from_disk(os.path.join(out_dir, 'train-data')),
+        eval_dataset=load_from_disk(os.path.join(out_dir, 'test-data')),
         tokenizer=tokenizer,
     )
     print('training started')
