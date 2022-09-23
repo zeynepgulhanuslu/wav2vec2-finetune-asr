@@ -160,28 +160,19 @@ if __name__ == '__main__':
     out_dir = args.out_dir
 
 
-    test_data_dir = os.path.join(out_dir, 'test-data')
-    train_data_dir = os.path.join(out_dir, 'train-data')
+    print('creating test dataset')
+    test_dataset = get_dataset(test_file)
+    test_dataset = test_dataset.map(replace_hatted_characters)
+    test_dataset = test_dataset.map(remove_special_characters)
+    test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000))
 
-    if os.path.exists(test_data_dir):
-        print('loading test data from disk')
-        test_dataset = load_from_disk(test_data_dir)
-    else:
-        test_dataset = get_dataset(test_file)
-        test_dataset = test_dataset.map(replace_hatted_characters)
-        test_dataset = test_dataset.map(remove_special_characters)
-        test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000))
 
-    if os.path.exists(train_data_dir):
-        print('loading train data from disk')
-        train_dataset = load_from_disk(train_data_dir)
-    else:
-        print('creating train dataset')
-        train_dataset = get_dataset(train_file)
-        train_dataset = train_dataset.map(replace_hatted_characters)
-        train_dataset = train_dataset.map(remove_special_characters)
-        # read audio file
-        train_dataset = train_dataset.cast_column("audio", Audio(sampling_rate=16_000))
+    print('creating train dataset')
+    train_dataset = get_dataset(train_file)
+    train_dataset = train_dataset.map(replace_hatted_characters)
+    train_dataset = train_dataset.map(remove_special_characters)
+    # read audio file
+    train_dataset = train_dataset.cast_column("audio", Audio(sampling_rate=16_000))
 
 
 
@@ -197,22 +188,31 @@ if __name__ == '__main__':
 
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
 
+    test_data_dir = os.path.join(out_dir, 'test-data')
+    train_data_dir = os.path.join(out_dir, 'train-data')
 
     if not os.path.exists(test_data_dir):
-        print('preparing dataset as batches')
+        print('preparing test dataset as batches')
         test_dataset = test_dataset.map(prepare_dataset, remove_columns=test_dataset.column_names,
                                         num_proc=num_process, keep_in_memory=True)
 
         test_dataset.save_to_disk(test_data_dir)
-
+    else:
+        print('loading test dataset as batches')
+        test_dataset = load_from_disk(test_data_dir)
     if not os.path.exists(train_data_dir):
-
+        print('preparing train dataset as batches')
         train_dataset = train_dataset.map(prepare_dataset, remove_columns=train_dataset.column_names,
                                           num_proc=num_process, keep_in_memory=True)
 
 
         train_dataset.save_to_disk(train_data_dir)
-        print('batch dataset completed.')
+    else:
+        print('loading train dataset as batches')
+        train_dataset = load_from_disk(train_data_dir)
+
+    print('batch dataset completed.')
+
     '''
 
    # wer_metric = evaluate.load("wer")
