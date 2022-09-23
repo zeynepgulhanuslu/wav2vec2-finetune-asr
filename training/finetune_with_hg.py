@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
-#import evaluate
+# import evaluate
 import numpy as np
 import torch
 from datasets import Audio, load_from_disk, load_metric
@@ -29,6 +29,11 @@ def extract_all_chars(batch):
 
 
 def save_vocab(train_dataset, test_dataset, vocab_file):
+    parent_dir = os.path.dirname(vocab_file)
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)
+
+
     vocab_train = train_dataset.map(extract_all_chars, batched=True, batch_size=-1, keep_in_memory=True,
                                     remove_columns=train_dataset.column_names)
     vocab_test = test_dataset.map(extract_all_chars, batched=True, batch_size=-1, keep_in_memory=True,
@@ -46,6 +51,7 @@ def save_vocab(train_dataset, test_dataset, vocab_file):
     with open(vocab_file, 'w', encoding='utf-8') as vocab_file:
         json.dump(vocab_dict, vocab_file)
 
+
 def replace_hatted_characters(batch):
     batch["sentence"] = re.sub('[â]', 'a', batch["sentence"])
     batch["sentence"] = re.sub('[î]', 'i', batch["sentence"])
@@ -54,6 +60,7 @@ def replace_hatted_characters(batch):
     batch["sentence"] = re.sub('[é]', 'e', batch["sentence"])
     batch["sentence"] = re.sub('[é]', 'e', batch["sentence"])
     return batch
+
 
 def prepare_dataset(batch):
     audio = batch["audio"]
@@ -159,6 +166,8 @@ if __name__ == '__main__':
     num_process = args.num_proc
     out_dir = args.out_dir
 
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
 
     print('creating test dataset')
     test_dataset = get_dataset(test_file)
@@ -166,16 +175,12 @@ if __name__ == '__main__':
     test_dataset = test_dataset.map(remove_special_characters)
     test_dataset = test_dataset.cast_column("audio", Audio(sampling_rate=16_000))
 
-
     print('creating train dataset')
     train_dataset = get_dataset(train_file)
     train_dataset = train_dataset.map(replace_hatted_characters)
     train_dataset = train_dataset.map(remove_special_characters)
     # read audio file
     train_dataset = train_dataset.cast_column("audio", Audio(sampling_rate=16_000))
-
-
-
 
     print('done creating datasets')
     save_vocab(train_dataset, test_dataset, vocab_file)
@@ -205,7 +210,6 @@ if __name__ == '__main__':
         train_dataset = train_dataset.map(prepare_dataset, remove_columns=train_dataset.column_names,
                                           num_proc=num_process, keep_in_memory=True)
 
-
         train_dataset.save_to_disk(train_data_dir)
     else:
         print('loading train dataset as batches')
@@ -213,9 +217,7 @@ if __name__ == '__main__':
 
     print('batch dataset completed.')
 
-    '''
-
-   # wer_metric = evaluate.load("wer")
+    # wer_metric = evaluate.load("wer")
     wer_metric = load_metric("wer")
     data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)
 
@@ -231,7 +233,6 @@ if __name__ == '__main__':
         pad_token_id=tokenizer.pad_token_id,
         vocab_size=len(tokenizer),
     )
-
 
     model.gradient_checkpointing_enable()
     training_args = TrainingArguments(
@@ -253,7 +254,6 @@ if __name__ == '__main__':
         push_to_hub=False,
     )
 
-
     trainer = Trainer(
         model=model,
         data_collator=data_collator,
@@ -266,4 +266,3 @@ if __name__ == '__main__':
     print('training started')
     trainer.train()
     print('training finished')
-'''
