@@ -33,7 +33,6 @@ def save_vocab(train_dataset, test_dataset, vocab_file):
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir)
 
-
     vocab_train = train_dataset.map(extract_all_chars, batched=True, batch_size=-1, keep_in_memory=True,
                                     remove_columns=train_dataset.column_names)
     vocab_test = test_dataset.map(extract_all_chars, batched=True, batch_size=-1, keep_in_memory=True,
@@ -183,8 +182,9 @@ if __name__ == '__main__':
     train_dataset = train_dataset.cast_column("audio", Audio(sampling_rate=16_000))
 
     print('done creating datasets')
-    save_vocab(train_dataset, test_dataset, vocab_file)
-    print('vocab file saved')
+    if not os.path.exists(vocab_file):
+        save_vocab(train_dataset, test_dataset, vocab_file)
+        print('vocab file saved')
 
     tokenizer = Wav2Vec2CTCTokenizer(vocab_file, unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
 
@@ -243,8 +243,8 @@ if __name__ == '__main__':
         mask_time_prob=0.05,
         layerdrop=0.1,
         ctc_loss_reduction="mean",
-        pad_token_id=processor.tokenizer.pad_token_id,
-        vocab_size=len(processor.tokenizer)
+        pad_token_id=tokenizer.pad_token_id,
+        vocab_size=len(tokenizer)
     )
 
     model.gradient_checkpointing_enable()
