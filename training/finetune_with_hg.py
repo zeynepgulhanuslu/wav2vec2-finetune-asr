@@ -222,6 +222,7 @@ if __name__ == '__main__':
     data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)
 
     print('initialize multi-languages model')
+    '''
     model = Wav2Vec2ForCTC.from_pretrained(
         "facebook/wav2vec2-xls-r-300m",
         attention_dropout=0.0,
@@ -233,6 +234,18 @@ if __name__ == '__main__':
         pad_token_id=tokenizer.pad_token_id,
         vocab_size=len(tokenizer),
     )
+'''
+    model = Wav2Vec2ForCTC.from_pretrained(
+        "facebook/wav2vec2-large-xlsr-53",
+        attention_dropout=0.1,
+        hidden_dropout=0.1,
+        feat_proj_dropout=0.0,
+        mask_time_prob=0.05,
+        layerdrop=0.1,
+        ctc_loss_reduction="mean",
+        pad_token_id=processor.tokenizer.pad_token_id,
+        vocab_size=len(processor.tokenizer)
+    )
 
     model.gradient_checkpointing_enable()
     training_args = TrainingArguments(
@@ -240,8 +253,7 @@ if __name__ == '__main__':
         group_by_length=True,
         per_device_train_batch_size=16,
         gradient_accumulation_steps=2,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
+        evaluation_strategy="steps",
         num_train_epochs=30,
         gradient_checkpointing=True,
         fp16=True,
