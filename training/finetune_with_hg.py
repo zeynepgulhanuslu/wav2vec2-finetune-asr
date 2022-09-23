@@ -54,6 +54,7 @@ def replace_hatted_characters(batch):
     batch["sentence"] = re.sub('[é]', 'e', batch["sentence"])
     batch["sentence"] = re.sub('[é]', 'e', batch["sentence"])
     return batch
+
 def prepare_dataset(batch):
     audio = batch["audio"]
     # batched output is "un-batched"
@@ -175,7 +176,7 @@ if __name__ == '__main__':
         print('loading train data from disk')
         train_dataset = load_from_disk(train_data_dir)
     else:
-
+        print('creating train dataset')
         train_dataset = get_dataset(train_file)
         train_dataset = train_dataset.map(replace_hatted_characters)
         train_dataset = train_dataset.map(remove_special_characters)
@@ -185,7 +186,7 @@ if __name__ == '__main__':
 
 
 
-    print('reading data complete')
+    print('done creating datasets')
     save_vocab(train_dataset, test_dataset, vocab_file)
     print('vocab file saved')
 
@@ -212,7 +213,7 @@ if __name__ == '__main__':
 
         train_dataset.save_to_disk(train_data_dir)
         print('batch dataset completed.')
-
+    '''
 
    # wer_metric = evaluate.load("wer")
     wer_metric = load_metric("wer")
@@ -265,3 +266,4 @@ if __name__ == '__main__':
     print('training started')
     trainer.train()
     print('training finished')
+'''
