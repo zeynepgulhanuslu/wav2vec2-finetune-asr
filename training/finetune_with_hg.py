@@ -234,8 +234,7 @@ if __name__ == '__main__':
         pad_token_id=tokenizer.pad_token_id,
         vocab_size=len(tokenizer),
     )
-'''
-    model = Wav2Vec2ForCTC.from_pretrained(
+       model = Wav2Vec2ForCTC.from_pretrained(
         "facebook/wav2vec2-large-xlsr-53",
         attention_dropout=0.1,
         hidden_dropout=0.1,
@@ -246,24 +245,32 @@ if __name__ == '__main__':
         pad_token_id=tokenizer.pad_token_id,
         vocab_size=len(tokenizer)
     )
+'''
+
+    model = Wav2Vec2ForCTC.from_pretrained(
+        "facebook/wav2vec2-base",
+        ctc_loss_reduction="mean",
+        pad_token_id=processor.tokenizer.pad_token_id,
+    )
+    model.freeze_feature_extractor()
 
     model.gradient_checkpointing_enable()
+
     training_args = TrainingArguments(
         output_dir=out_dir,
         group_by_length=True,
-        per_device_train_batch_size=16,
-        gradient_accumulation_steps=2,
+        per_device_train_batch_size=32,
         evaluation_strategy="steps",
         num_train_epochs=30,
-        gradient_checkpointing=True,
         fp16=True,
-        save_steps=400,
-        eval_steps=400,
-        logging_steps=400,
-        learning_rate=3e-4,
-        warmup_steps=500,
+        gradient_checkpointing=True,
+        save_steps=500,
+        eval_steps=500,
+        logging_steps=500,
+        learning_rate=1e-4,
+        weight_decay=0.005,
+        warmup_steps=1000,
         save_total_limit=2,
-        push_to_hub=False,
     )
 
     trainer = Trainer(
