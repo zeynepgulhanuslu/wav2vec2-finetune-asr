@@ -243,8 +243,8 @@ if __name__ == '__main__':
 
     training_args = TrainingArguments(
         output_dir=out_dir,
-        group_by_length=True,
-        per_device_train_batch_size=None,
+        group_by_length=False,
+        per_device_train_batch_size=32,
         evaluation_strategy="steps",
         num_train_epochs=30,
         fp16=True,
