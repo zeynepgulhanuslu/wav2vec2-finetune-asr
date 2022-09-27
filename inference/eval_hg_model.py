@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parser.add_argument('--processor', type=str, required=True, help='processor directory')
     parser.add_argument('--test', type=str, required=True, help='test csv file')
     parser.add_argument('--num_proc', type=int, required=True, help='num process counts')
-    parser.add_argument('--out_file', type=int, required=True, help='out file for wer information')
+    parser.add_argument('--out_file', type=str, required=True, help='out file for wer information')
 
     args = parser.parse_args()
     model_dir = args.model
