@@ -47,6 +47,7 @@ if __name__ == '__main__':
     parent_dir = os.path.dirname(out_file)
     if not os.path.exists(parent_dir):
         os.mkdir(parent_dir)
+    transcript_data = get_dataset(test_file)
 
     f_o = open(out_file, 'w', encoding='utf-8')
     for x in range(len(test_dataset)):
@@ -56,7 +57,7 @@ if __name__ == '__main__':
 
         pred_ids = torch.argmax(logits, dim=-1)[0]
 
-        transcript = processor(test_dataset[x]["sentence"])
+        transcript = processor(transcript_data[x]["sentence"])
 
         f_o.write("\n" + "Prediction:" + processor.decode(pred_ids) +
                   "\n" + "Reference:" + transcript)
