@@ -3,7 +3,7 @@ import os
 
 import torch
 from datasets import Audio
-from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
+from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor
 
 from dataloader.convert_kaldi_data import get_dataset
 from training.finetune_with_hg import replace_hatted_characters, remove_special_characters, prepare_dataset
@@ -12,20 +12,25 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--model', type=str, required=True, help='model directory')
-    parser.add_argument('--processor', type=str, required=True, help='processor directory')
     parser.add_argument('--test', type=str, required=True, help='test csv file')
     parser.add_argument('--num_proc', type=int, required=True, help='num process counts')
+    parser.add_argument('--vocab', type=str, required=True, help='vocab json file')
     parser.add_argument('--out_file', type=str, required=True, help='out file for wer information')
 
     args = parser.parse_args()
     model_dir = args.model
-    processor = args.processor
+    vocab_file = args.vocab
     test_file = args.test
     out_file = args.out_file
     num_process = args.num_proc
 
     model = Wav2Vec2ForCTC.from_pretrained(model_dir)
-    processor = Wav2Vec2Processor.from_pretrained(processor)
+    tokenizer = Wav2Vec2CTCTokenizer(vocab_file, unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
+
+    feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
+                                                 do_normalize=True, return_attention_mask=True)
+
+    processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
 
     print('creating test dataset')
     test_dataset = get_dataset(test_file)
