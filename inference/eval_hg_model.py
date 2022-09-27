@@ -3,7 +3,7 @@ import os
 
 import torch
 from datasets import Audio
-from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor
+from transformers import AutoProcessor, AutoModelForCTC
 
 from dataloader.convert_kaldi_data import get_dataset
 from training.finetune_with_hg import replace_hatted_characters, remove_special_characters
@@ -24,23 +24,16 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, required=True, help='model directory')
     parser.add_argument('--test', type=str, required=True, help='test csv file')
     parser.add_argument('--num_proc', type=int, required=True, help='num process counts')
-    parser.add_argument('--vocab', type=str, required=True, help='vocab json file')
     parser.add_argument('--out_file', type=str, required=True, help='out file for wer information')
 
     args = parser.parse_args()
     model_dir = args.model
-    vocab_file = args.vocab
     test_file = args.test
     out_file = args.out_file
     num_process = args.num_proc
 
-    model = Wav2Vec2ForCTC.from_pretrained(model_dir)
-    tokenizer = Wav2Vec2CTCTokenizer(vocab_file, unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
-
-    feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
-                                                 do_normalize=True, return_attention_mask=True)
-
-    processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
+    model = AutoModelForCTC.from_pretrained(model_dir)
+    processor = AutoProcessor.from_pretrained(model_dir)
 
     print('creating test dataset')
     test_dataset = get_dataset(test_file)
@@ -63,7 +56,7 @@ if __name__ == '__main__':
 
         pred_ids = torch.argmax(logits, dim=-1)[0]
 
-        transcript = processor(test_dataset[x]["labels"])
+        transcript = processor(test_dataset[x]["sentence"])
 
-        f_o.write("\n" + "Prediction:" + processor.decode(pred_ids) + "\n" + "Reference:" +
-                  transcript)
+        f_o.write("\n" + "Prediction:" + processor.decode(pred_ids) +
+                  "\n" + "Reference:" + transcript)
