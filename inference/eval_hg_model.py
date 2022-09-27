@@ -1,4 +1,12 @@
+import argparse
+import os
 
+import torch
+from datasets import Audio
+from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
+
+from dataloader.convert_kaldi_data import get_dataset
+from training.finetune_with_hg import replace_hatted_characters, remove_special_characters, prepare_dataset
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -6,6 +14,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, required=True, help='model directory')
     parser.add_argument('--processor', type=str, required=True, help='processor directory')
     parser.add_argument('--test', type=str, required=True, help='test csv file')
+    parser.add_argument('--num_proc', type=int, required=True, help='num process counts')
     parser.add_argument('--out_file', type=int, required=True, help='out file for wer information')
 
     args = parser.parse_args()
@@ -13,6 +22,7 @@ if __name__ == '__main__':
     processor = args.processor
     test_file = args.test
     out_file = args.out_file
+    num_process = args.num_proc
 
     model = Wav2Vec2ForCTC.from_pretrained(model_dir)
     processor = Wav2Vec2Processor.from_pretrained(processor)
@@ -38,7 +48,7 @@ if __name__ == '__main__':
 
         pred_ids = torch.argmax(logits, dim=-1)[0]
 
-        transcript = processor(test_dataset[x]["labels"]
+        transcript = processor(test_dataset[x]["labels"])
 
         f_o.write("\n" + "Prediction:" + processor.decode(pred_ids) + "\n" + "Reference:" +
-                      transcript.lower())
+                  transcript.lower())
