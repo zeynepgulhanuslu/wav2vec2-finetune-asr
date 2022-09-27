@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
         ref = unicode_tr(transcript_data[x]["sentence"]).strip().lower()
 
-        hyp = processor.hyp(pred_ids)
+        hyp = processor.decode(pred_ids)
 
         wer = jiwer.wer(ref, hyp)
         f_o.write("\n" + "Prediction:" + hyp +
