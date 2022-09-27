@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
         pred_ids = torch.argmax(logits, dim=-1)[0]
 
-        ref = unicode_tr.lower(transcript_data[x]["sentence"])
+        ref = unicode_tr(transcript_data[x]["sentence"]).strip().lower()
 
         hyp = processor.hyp(pred_ids)
 
