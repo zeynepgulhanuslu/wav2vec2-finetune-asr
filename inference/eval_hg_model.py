@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     f_o = open(out_file, 'w', encoding='utf-8')
     for x in range(len(test_dataset)):
-        input_dict = processor(test_dataset[x]["input_values"], return_tensors="pt", padding=True)
+        input_dict = processor(test_dataset[x]["input_values"], sampling_rate=16_000, return_tensors="pt", padding=True)
 
         logits = model(input_dict.input_values).logits
 
@@ -66,4 +66,4 @@ if __name__ == '__main__':
         transcript = processor(test_dataset[x]["labels"])
 
         f_o.write("\n" + "Prediction:" + processor.decode(pred_ids) + "\n" + "Reference:" +
-                  transcript.lower())
+                  transcript)
