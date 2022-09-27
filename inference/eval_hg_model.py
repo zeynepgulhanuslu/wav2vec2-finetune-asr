@@ -1,10 +1,10 @@
 import argparse
 import os
-
+import jiwer
 import torch
 from datasets import Audio
 from transformers import AutoProcessor, AutoModelForCTC
-
+from unicode_tr import unicode_tr
 from dataloader.convert_kaldi_data import get_dataset
 from training.finetune_with_hg import replace_hatted_characters, remove_special_characters
 
@@ -57,7 +57,13 @@ if __name__ == '__main__':
 
         pred_ids = torch.argmax(logits, dim=-1)[0]
 
-        transcript = processor(transcript_data[x]["sentence"])
+        ref = unicode_tr.lower(transcript_data[x]["sentence"])
 
-        f_o.write("\n" + "Prediction:" + processor.decode(pred_ids) +
-                  "\n" + "Reference:" + transcript)
+        hyp = processor.hyp(pred_ids)
+
+        wer = jiwer.wer(ref, hyp)
+        f_o.write("\n" + "Prediction:" + hyp +
+                  "\n" + "Reference:" + ref +
+                  "\n" + "Wer:" + str(wer))
+
+        print(f"WER: {wer * 100:.2f} %")
