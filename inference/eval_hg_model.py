@@ -6,7 +6,17 @@ from datasets import Audio
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC, Wav2Vec2CTCTokenizer, Wav2Vec2FeatureExtractor
 
 from dataloader.convert_kaldi_data import get_dataset
-from training.finetune_with_hg import replace_hatted_characters, remove_special_characters, prepare_dataset
+from training.finetune_with_hg import replace_hatted_characters, remove_special_characters
+
+
+def prepare_dataset(batch):
+    audio = batch["audio"]
+    # batched output is "un-batched"
+    batch["input_values"] = processor(audio["array"], sampling_rate=audio["sampling_rate"]).input_values[0]
+    with processor.as_target_processor():
+        batch["labels"] = processor(batch["sentence"]).input_ids
+    return batch
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
