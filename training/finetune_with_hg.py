@@ -224,17 +224,16 @@ if __name__ == '__main__':
     print('initialize multi-languages model')
 
     model = Wav2Vec2ForCTC.from_pretrained(
-        "facebook/wav2vec2-xls-r-300m",
-        attention_dropout=0.0,
-        hidden_dropout=0.0,
+        "facebook/wav2vec2-large-xlsr-53",
+        attention_dropout=0.1,
+        hidden_dropout=0.1,
         feat_proj_dropout=0.0,
         mask_time_prob=0.05,
-        layerdrop=0.0,
+        layerdrop=0.1,
         ctc_loss_reduction="mean",
         pad_token_id=tokenizer.pad_token_id,
-        vocab_size=len(tokenizer),
+        vocab_size=len(tokenizer)
     )
-
     model.freeze_feature_extractor()
 
     model.gradient_checkpointing_enable()
@@ -243,7 +242,7 @@ if __name__ == '__main__':
         output_dir=out_dir,
         group_by_length=False,
         auto_find_batch_size=True,
-        per_device_train_batch_size=1,
+        per_device_train_batch_size=16,
         evaluation_strategy="steps",
         num_train_epochs=30,
         fp16=True,
@@ -269,5 +268,18 @@ if __name__ == '__main__':
     print('training started')
     torch.cuda.empty_cache()
 
-    trainer.train()
+    if last_checkpoint is not None:
+        checkpoint = last_checkpoint
+    elif os.path.isdir(model_args.model_name_or_path):
+        checkpoint = model_args.model_name_or_path
+    else:
+        checkpoint = None
+
+    train_result = trainer.train()
+
     print('training finished')
+    train_metrics = train_result.metrics
+    train_metrics["train_samples"] = len(train_dataset)
+    trainer.log_metrics("train", split=',', metrics=train_metrics)
+    trainer.save_metrics("train", split=',', metrics=train_metrics)
+    trainer.save_state()
