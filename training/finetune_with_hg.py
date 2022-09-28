@@ -11,6 +11,7 @@ import torch
 from datasets import Audio, load_from_disk, load_metric
 from transformers import Wav2Vec2Processor, Wav2Vec2CTCTokenizer, Wav2Vec2ForCTC, TrainingArguments, Trainer, \
     Wav2Vec2FeatureExtractor
+from transformers.trainer_utils import get_last_checkpoint
 
 from dataloader.convert_kaldi_data import get_dataset
 
@@ -147,6 +148,21 @@ def compute_metrics(pred):
 
     return {"wer": wer}
 
+def load_last_checkpoint(output_dir):
+    last_checkpoint = None
+    if os.path.isdir(output_dir) :
+        last_checkpoint = get_last_checkpoint(output_dir)
+        if last_checkpoint is None and len(os.listdir(output_dir)) > 0:
+            raise ValueError(
+                f"Output directory ({output_dir}) already exists and is not empty. "
+                "Use --overwrite_output_dir to overcome."
+            )
+        elif last_checkpoint is not None:
+            print(
+                f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
+                "the `--output_dir` or add `--overwrite_output_dir` to train from scratch."
+            )
+    return last_checkpoint
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -267,19 +283,17 @@ if __name__ == '__main__':
     )
     print('training started')
     torch.cuda.empty_cache()
-
+    last_checkpoint = load_last_checkpoint(out_dir)
     if last_checkpoint is not None:
         checkpoint = last_checkpoint
-    elif os.path.isdir(model_args.model_name_or_path):
-        checkpoint = model_args.model_name_or_path
+
     else:
         checkpoint = None
 
-    train_result = trainer.train()
+    train_result = trainer.train(resume_from_checkpoint=checkpoint)
 
     print('training finished')
     train_metrics = train_result.metrics
     train_metrics["train_samples"] = len(train_dataset)
     trainer.log_metrics("train", split=',', metrics=train_metrics)
     trainer.save_metrics("train", split=',', metrics=train_metrics)
-    trainer.save_state()
