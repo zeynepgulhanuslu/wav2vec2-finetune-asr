@@ -11,9 +11,10 @@ import torch
 from datasets import Audio, load_from_disk, load_metric
 from transformers import Wav2Vec2Processor, Wav2Vec2CTCTokenizer, Wav2Vec2ForCTC, TrainingArguments, Trainer, \
     Wav2Vec2FeatureExtractor
-from transformers.trainer_utils import get_last_checkpoint
 
 from dataloader.convert_kaldi_data import get_dataset
+
+torch.cuda.set_per_process_memory_fraction(0.6)
 
 chars_to_ignore_regex = '[\,\?\.\!\-\;\:\"\“\%\‘\”\�]'
 
