@@ -1,3 +1,7 @@
+import argparse
+import os
+
+import numpy as np
 from datasets import load_dataset, load_metric, Audio
 
 import re
@@ -181,8 +185,8 @@ if __name__ == '__main__':
         mask_time_prob=0.05,
         layerdrop=0.1,
         ctc_loss_reduction="mean",
-        pad_token_id=processor.tokenizer.pad_token_id,
-        vocab_size=len(processor.tokenizer)
+        pad_token_id=tokenizer.pad_token_id,
+        vocab_size=len(tokenizer)
     )
     print('successfuly loaded pre-trained model.')
     model.freeze_feature_extractor()
@@ -216,12 +220,12 @@ if __name__ == '__main__':
         compute_metrics=compute_metrics,
         train_dataset=common_voice_train,
         eval_dataset=common_voice_test,
-        tokenizer=processor.feature_extractor,
+        tokenizer=feature_extractor,
     )
     print('start training')
-    trainer.train()
+    train_result = trainer.train()
     print('training finished')
     train_metrics = train_result.metrics
-    train_metrics["train_samples"] = len(train_dataset)
+    train_metrics["train_samples"] = len(common_voice_train)
     trainer.log_metrics("train", split=',', metrics=train_metrics)
     trainer.save_metrics("train", split=',', metrics=train_metrics)
