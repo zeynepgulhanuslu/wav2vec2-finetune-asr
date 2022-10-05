@@ -155,8 +155,9 @@ if __name__ == '__main__':
     len(vocab_dict)
 
     vocab_file = out_dir + '/vocab.json'
-    with open(vocab_file, 'w', encoding='utf-8') as vocab_file:
-        json.dump(vocab_dict, vocab_file)
+
+    with open(vocab_file, 'w', encoding='utf-8') as f:
+        json.dump(vocab_dict, f)
     print('vocabulary saved successfully')
     tokenizer = Wav2Vec2CTCTokenizer(vocab_file, unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
 
