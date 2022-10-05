@@ -154,10 +154,11 @@ if __name__ == '__main__':
     vocab_dict["[PAD]"] = len(vocab_dict)
     len(vocab_dict)
 
-    with open(out_dir + '/vocab.json', 'w', encoding='utf-8') as vocab_file:
+    vocab_file = out_dir + '/vocab.json'
+    with open(vocab_file, 'w', encoding='utf-8') as vocab_file:
         json.dump(vocab_dict, vocab_file)
     print('vocabulary saved successfully')
-    tokenizer = Wav2Vec2CTCTokenizer("./vocab.json", unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
+    tokenizer = Wav2Vec2CTCTokenizer(vocab_file, unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
 
     feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
                                                  do_normalize=True, return_attention_mask=True)
