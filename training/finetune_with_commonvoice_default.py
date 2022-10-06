@@ -132,7 +132,7 @@ if __name__ == '__main__':
         os.makedirs(out_dir)
         last_checkpoint = None
     else:
-        last_checkpoint = get_last_checkpoint(training_args.output_dir)
+        last_checkpoint = get_last_checkpoint(output_dir)
 
     common_voice_train = load_dataset("common_voice", "tr", split="train+validation")
     common_voice_test = load_dataset("common_voice", "tr", split="test")
