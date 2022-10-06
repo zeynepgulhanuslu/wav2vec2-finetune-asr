@@ -227,10 +227,7 @@ if __name__ == '__main__':
         tokenizer=feature_extractor,
     )
 
-    if last_checkpoint is not None:
-        checkpoint = last_checkpoint
-    else:
-        checkpoint = None
+
 
     print('start training')
     train_result = trainer.train()
