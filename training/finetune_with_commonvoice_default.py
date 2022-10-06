@@ -11,6 +11,7 @@ from transformers import Wav2Vec2FeatureExtractor
 from transformers import Wav2Vec2Processor
 from transformers import Wav2Vec2ForCTC
 import torch
+from transformers.trainer_utils import get_last_checkpoint
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
@@ -126,6 +127,8 @@ if __name__ == '__main__':
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
+    else:
+        last_checkpoint = get_last_checkpoint(training_args.output_dir)
 
     common_voice_train = load_dataset("common_voice", "tr", split="train+validation")
     common_voice_test = load_dataset("common_voice", "tr", split="test")
@@ -158,6 +161,7 @@ if __name__ == '__main__':
 
     with open(vocab_file, 'w', encoding='utf-8') as f:
         json.dump(vocab_dict, f)
+
     print('vocabulary saved successfully')
     tokenizer = Wav2Vec2CTCTokenizer(vocab_file, unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|")
 
@@ -224,8 +228,14 @@ if __name__ == '__main__':
         eval_dataset=common_voice_test,
         tokenizer=feature_extractor,
     )
+
+    if last_checkpoint is not None:
+        checkpoint = last_checkpoint
+    else:
+        checkpoint = None
+
     print('start training')
-    train_result = trainer.train()
+    train_result = trainer.train(resume_from_checkpoint=checkpoint)
     print('training finished')
     train_metrics = train_result.metrics
     train_metrics["train_samples"] = len(common_voice_train)
