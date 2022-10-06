@@ -108,7 +108,7 @@ def compute_metrics(pred):
     pred_logits = pred.predictions
     pred_ids = np.argmax(pred_logits, axis=-1)
 
-    pred.label_ids[pred.label_ids == -100] = processor.tokenizer.pad_token_id
+    pred.label_ids[pred.label_ids == -100] = tokenizer.pad_token_id
 
     pred_str = processor.batch_decode(pred_ids)
     # we do not want to group tokens when computing the metrics
@@ -130,9 +130,6 @@ if __name__ == '__main__':
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-        last_checkpoint = None
-    else:
-        last_checkpoint = get_last_checkpoint(out_dir)
 
     common_voice_train = load_dataset("common_voice", "tr", split="train+validation")
     common_voice_test = load_dataset("common_voice", "tr", split="test")
@@ -236,7 +233,7 @@ if __name__ == '__main__':
         checkpoint = None
 
     print('start training')
-    train_result = trainer.train(resume_from_checkpoint=checkpoint)
+    train_result = trainer.train()
     print('training finished')
     train_metrics = train_result.metrics
     train_metrics["train_samples"] = len(common_voice_train)
