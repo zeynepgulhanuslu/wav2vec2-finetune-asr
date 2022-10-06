@@ -15,6 +15,7 @@ from transformers.trainer_utils import get_last_checkpoint
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
+
 chars_to_ignore_regex = '[\,\?\.\!\-\;\:\"\“\%\‘\”\�]'
 
 
@@ -102,6 +103,7 @@ class DataCollatorCTCWithPadding:
 
         return batch
 
+
 def compute_metrics(pred):
     pred_logits = pred.predictions
     pred_ids = np.argmax(pred_logits, axis=-1)
@@ -116,6 +118,7 @@ def compute_metrics(pred):
 
     return {"wer": wer}
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
@@ -127,6 +130,7 @@ if __name__ == '__main__':
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
+        last_checkpoint = None
     else:
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
 
@@ -168,12 +172,10 @@ if __name__ == '__main__':
     feature_extractor = Wav2Vec2FeatureExtractor(feature_size=1, sampling_rate=16000, padding_value=0.0,
                                                  do_normalize=True, return_attention_mask=True)
 
-
-
     processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
     common_voice_train = common_voice_train.cast_column("audio", Audio(sampling_rate=16_000))
     common_voice_test = common_voice_test.cast_column("audio", Audio(sampling_rate=16_000))
-    
+
     common_voice_train = common_voice_train.map(prepare_dataset, remove_columns=common_voice_train.column_names,
                                                 num_proc=num_process)
     common_voice_test = common_voice_test.map(prepare_dataset, remove_columns=common_voice_test.column_names,
@@ -201,7 +203,6 @@ if __name__ == '__main__':
     from transformers import TrainingArguments
 
     training_args = TrainingArguments(
-        # output_dir="/content/gdrive/MyDrive/wav2vec2-large-xlsr-turkish-demo",
         output_dir=out_dir,
         group_by_length=True,
         per_device_train_batch_size=16,
